@@ -10,6 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await DomainVerifier.verifyDomain(url, userId);
+
+    console.log(`Domain verification result for ${url}:`, result);
     
     return NextResponse.json(result);
     

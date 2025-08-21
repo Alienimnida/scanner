@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 import { getBrowserInstance } from '@/app/lib/scanner/browser';
 import { detectCredentials } from '@/app/lib/scanner/credentials';
 import { shouldSkipScript } from '@/app/lib/scanner/filters';
@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const isVerified = DomainVerifier.isDomainVerified(url, userId);
-    const isWhitelisted = DomainVerifier.isWhitelistedDomain(url);
+    const isVerified = await DomainVerifier.isDomainVerified(url, userId);
+    const isWhitelisted = await DomainVerifier.isWhitelistedDomain(url);
 
     if (!isVerified && !isWhitelisted) {
       return NextResponse.json(

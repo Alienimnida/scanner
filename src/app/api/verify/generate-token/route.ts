@@ -9,7 +9,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Domain is required' }, { status: 400 });
     }
 
-    const token = DomainVerifier.generateVerificationToken(domain, userId);
+    const token = await DomainVerifier.generateVerificationToken(domain, userId);
+
+    console.log(token)
     
     return NextResponse.json({
       token,
