@@ -1,0 +1,64 @@
+export interface CredentialMatch {
+  type: string;
+  value: string;
+  line: number;
+  context: string;
+}
+
+export interface NetworkCall {
+  url: string;
+  method: string;
+  status: number;
+  size: number;
+  type: string;
+  secure: boolean;
+  domain: string;
+  timing: number;
+}
+
+export interface ScannedScript {
+  url: string;
+  type: 'external' | 'inline';
+  content?: string;
+  size?: number;
+  credentials?: CredentialMatch[];
+}
+
+export interface ScanResult {
+  url: string;
+  scripts: ScannedScript[];
+  networkCalls: NetworkCall[];
+  timestamp: string;
+  totalScripts: number;
+  totalCredentials: number;
+  totalNetworkCalls: number;
+  credentialsSummary: { [key: string]: number };
+  networkSummary: {
+    secure: number;
+    insecure: number;
+    totalSize: number;
+    domains: string[];
+  };
+}
+
+export interface SecurityScore {
+  score: number;
+  label: string;
+  color: string;
+  icon: React.ReactNode;
+}
+
+export type TabType = 'scripts' | 'network';
+
+export interface DomainVerificationResult {
+  verified: boolean;
+  method?: string;
+  error?: string;
+}
+
+export interface VerificationToken {
+  domain: string;
+  token: string;
+  expiresAt: Date;
+  userId?: string;
+}
