@@ -24,7 +24,7 @@ async function saveScanHistory(scanResult: ScanResult, userId?: string) {
         totalScripts: scanResult.totalScripts,
         totalCredentials: scanResult.totalCredentials,
         seoScore: scanResult.seoAnalysis.score,
-        scanResult: scanResult as any, // Store full result as JSON
+        scanResult: scanResult as any,
         status: 'completed'
       }
     });
@@ -92,7 +92,6 @@ export async function POST(request: NextRequest) {
 
     await page.setViewport({ width: 1280, height: 720 });
 
-    // Load the main page first
     await page.goto(url, { 
       waitUntil: 'networkidle2',
       timeout: 30000 
@@ -100,7 +99,6 @@ export async function POST(request: NextRequest) {
 
     console.log('Page loaded, extracting scripts...');
 
-    // Extract scripts
     const scripts = await page.evaluate(() => {
       const scriptElements = document.querySelectorAll('script');
       const extractedScripts: ScannedScript[] = [];
