@@ -1,6 +1,5 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCyberScan } from '../../hooks/useCyberScan';
 import { Header } from './Header';
 import { ScanInput } from './ScanInput';
@@ -9,11 +8,13 @@ import { StatsCards } from './StatsCards';
 import { CriticalAlerts } from './CriticalAlerts';
 import { ScriptAnalysis } from './ScriptAnalysis';
 import { NetworkAnalysis } from './NetworkAnalysis';
-import { SEOAnalysis } from './SEOAnalysis'; // Import the new SEO component
+import { SEOAnalysis } from './SEOAnalysis';
 import { TabNavigation } from '../ui/TabNavigation';
 import { ErrorAlert } from '../ui/ErrorAlert';
 import { DomainVerification } from './DomainVerification';
-import type { TabType } from '../../types/cyberscope';
+import { ScanHistorySidebar } from './ScanHistorySidebar';
+import { useScanHistory } from '@/app/hooks/useScanHistory';
+import type { TabType, ScanResult } from '../../types/cyberscope';
 
 export default function CyberScope() {
   const {
@@ -29,10 +30,14 @@ export default function CyberScope() {
     domainToVerify,
     generateVerificationToken,
     checkVerification,
-    resetVerification
+    resetVerification,
+    loadPreviousScan,
+    userId
   } = useCyberScan();
 
+  const { addToHistory } = useScanHistory(userId);
   const [activeTab, setActiveTab] = useState<TabType>('scripts');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const tabs = [
     {
@@ -47,14 +52,34 @@ export default function CyberScope() {
     }] : []),
     ...(result?.seoAnalysis ? [{
       key: 'seo' as TabType,
-      label: `SEO Analysis (${result.seoAnalysis.score}/100)`,
+      label: `SEO Analysis (${result.seoAnalysis.score || 0}/100)`,
       icon: 'TrendingUp'
     }] : [])
   ];
 
+  // Effect to add successful scans to history
+  useEffect(() => {
+    if (result && result.id && !loading) {
+      addToHistory(result);
+    }
+  }, [result, loading, addToHistory]);
+
+  const handleLoadScan = (scanResult: ScanResult) => {
+    // Load the previous scan result into the current state
+    if (loadPreviousScan) {
+      loadPreviousScan(scanResult);
+    } else {
+      console.warn('loadPreviousScan method not available in useCyberScan hook');
+    }
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
-      <Header />
+      <Header onToggleSidebar={toggleSidebar} />
       
       <div className="container mx-auto p-6 max-w-7xl">
         <ScanInput
@@ -108,6 +133,13 @@ export default function CyberScope() {
           </div>
         )}
       </div>
+
+      <ScanHistorySidebar
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        onLoadScan={handleLoadScan}
+        userId={userId}
+      />
     </div>
   );
 }

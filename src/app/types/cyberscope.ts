@@ -41,6 +41,7 @@ export interface ScanResult {
     domains: string[];
   };
   seoAnalysis: SEOAnalysis; 
+  userId?: string;
 }
 
 export interface SecurityScore {

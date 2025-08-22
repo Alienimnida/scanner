@@ -7,6 +7,32 @@ import { setupNetworkMonitoring, analyzeNetworkCalls } from '@/app/lib/scanner/n
 import { calculateSEOScore, generateSEORecommendations } from '@/app/lib/scanner/seo';
 import { SEORecommendation, ScanResult, ScannedScript } from '@/app/types/cyberscope';
 import { DomainVerifier } from '@/app/lib/verification/domain-verification';
+import { PrismaClient } from '@/generated/prisma/client'
+import { randomUUID } from 'crypto';
+
+const prisma = new PrismaClient();
+
+async function saveScanHistory(scanResult: ScanResult, userId?: string) {
+  try {
+    await prisma.scanHistory.create({
+      data: {
+        id: scanResult.id!,
+        url: scanResult.url,
+        userId: userId || null,
+        title: scanResult.seoAnalysis.data.title || null,
+        timestamp: new Date(scanResult.timestamp),
+        totalScripts: scanResult.totalScripts,
+        totalCredentials: scanResult.totalCredentials,
+        seoScore: scanResult.seoAnalysis.score,
+        scanResult: scanResult as any, // Store full result as JSON
+        status: 'completed'
+      }
+    });
+    console.log(`Scan history saved with ID: ${scanResult.id}`);
+  } catch (error) {
+    console.error('Error saving scan history:', error);
+  }
+}
 
 export async function POST(request: NextRequest) {
   let browser;
@@ -99,7 +125,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`Found ${scripts.length} scripts, filtering...`);
 
-    // Process scripts with credentials detection
     const filteredScripts: ScannedScript[] = [];
     let totalCredentials = 0;
     const credentialsSummary: { [key: string]: number } = {};
@@ -158,23 +183,19 @@ export async function POST(request: NextRequest) {
       filteredScripts.push(script);
     }
 
-    // Return to the main page after script analysis
     console.log('Returning to main page for SEO analysis...');
     await page.goto(url, { 
       waitUntil: 'networkidle2',
       timeout: 30000 
     });
 
-    // Analyze network calls
     const networkSummary = analyzeNetworkCalls(networkCalls);
 
     console.log('Starting SEO analysis...');
 
-    // Extract SEO data from the main page
     const seoAnalysis = await page.evaluate(() => {
       console.log('Extracting SEO data from page...');
       
-      // Extract basic SEO data
       const title = document.title || '';
       const metaDescription = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
       const metaKeywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
@@ -183,19 +204,16 @@ export async function POST(request: NextRequest) {
       const charset = document.querySelector('meta[charset]')?.getAttribute('charset') || 
                       document.querySelector('meta[http-equiv="Content-Type"]')?.getAttribute('content') || '';
       
-      // Open Graph tags
       const ogTitle = document.querySelector('meta[property="og:title"]')?.getAttribute('content') || '';
       const ogDescription = document.querySelector('meta[property="og:description"]')?.getAttribute('content') || '';
       const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content') || '';
       const ogType = document.querySelector('meta[property="og:type"]')?.getAttribute('content') || '';
       
-      // Twitter Card tags
       const twitterCard = document.querySelector('meta[name="twitter:card"]')?.getAttribute('content') || '';
       const twitterTitle = document.querySelector('meta[name="twitter:title"]')?.getAttribute('content') || '';
       const twitterDescription = document.querySelector('meta[name="twitter:description"]')?.getAttribute('content') || '';
       const twitterImage = document.querySelector('meta[name="twitter:image"]')?.getAttribute('content') || '';
       
-      // Structured data
       const structuredData = Array.from(document.querySelectorAll('script[type="application/ld+json"]'))
         .map(script => {
           try {
@@ -207,7 +225,6 @@ export async function POST(request: NextRequest) {
         })
         .filter(Boolean);
       
-      // Headings structure
       const headings = {
         h1: Array.from(document.querySelectorAll('h1')).map(h => h.textContent?.trim() || '').filter(Boolean),
         h2: Array.from(document.querySelectorAll('h2')).map(h => h.textContent?.trim() || '').filter(Boolean),
@@ -217,14 +234,12 @@ export async function POST(request: NextRequest) {
         h6: Array.from(document.querySelectorAll('h6')).map(h => h.textContent?.trim() || '').filter(Boolean)
       };
       
-      // Images analysis
       const allImages = document.querySelectorAll('img');
       const imagesWithoutAlt = Array.from(allImages).filter(img => {
         const alt = img.getAttribute('alt');
         return !alt || alt.trim() === '';
       }).length;
       
-      // Links analysis
       const allLinks = document.querySelectorAll('a[href]');
       const internalLinks = Array.from(allLinks).filter(link => {
         const href = link.getAttribute('href');
@@ -236,11 +251,9 @@ export async function POST(request: NextRequest) {
         return href && href.startsWith('http') && !href.includes(window.location.hostname);
       }).length;
       
-      // Content analysis
       const textContent = document.body.textContent || '';
       const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
       
-      // Performance data (if available)
       let loadTime = 0;
       try {
         if (typeof performance !== 'undefined' && performance.timing) {
@@ -294,7 +307,6 @@ export async function POST(request: NextRequest) {
 
     console.log('SEO analysis completed, checking robots.txt and sitemap...');
 
-    // Check robots.txt and sitemap
     let robotsTxt = '';
     let sitemapExists = false;
 
@@ -322,7 +334,6 @@ export async function POST(request: NextRequest) {
       console.log('sitemap.xml not found or failed to load:', error);
     }
 
-    // Combine all SEO data
     const seoData = {
       ...seoAnalysis,
       robotsTxt,
@@ -332,7 +343,6 @@ export async function POST(request: NextRequest) {
 
     console.log('Computing SEO score and recommendations...');
     
-    // Calculate SEO score and generate recommendations
     let seoScore = 0;
     let seoRecommendations: SEORecommendation[] = [];
 
@@ -342,7 +352,6 @@ export async function POST(request: NextRequest) {
       console.log(`SEO score calculated: ${seoScore}`);
     } catch (error) {
       console.error('Error calculating SEO score:', error);
-      // Provide fallback values
       seoScore = 0;
       seoRecommendations = [{ 
         category: 'System Error', 
@@ -352,8 +361,10 @@ export async function POST(request: NextRequest) {
       }];
     }
 
-    // Build final result
+    const scanId = randomUUID();
+
     const result: ScanResult = {
+      id: scanId,
       url,
       scripts: filteredScripts,
       networkCalls,
@@ -367,10 +378,15 @@ export async function POST(request: NextRequest) {
         data: seoData,
         score: seoScore,
         recommendations: seoRecommendations
-      }
+      },
+      userId
     };
 
+    // Save to history (don't await to avoid slowing down the response)
+    saveScanHistory(result, userId).catch(console.error);
+
     console.log(`Scan completed successfully!`);
+    console.log(`- Scan ID: ${scanId}`);
     console.log(`- Scripts: ${result.totalScripts}`);
     console.log(`- Credentials: ${totalCredentials}`);
     console.log(`- Network calls: ${networkCalls.length}`);
