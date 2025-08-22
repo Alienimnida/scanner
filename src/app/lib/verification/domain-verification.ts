@@ -1,25 +1,28 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
-import {DomainVerificationResult, VerificationToken} from '@/app/types/cyberscope';
-
-const verificationTokens = new Map<string, VerificationToken>();
-const verifiedDomains = new Map<string, { userId?: string; verifiedAt: Date }>();
+import { DomainVerificationResult, VerificationToken } from '@/app/types/cyberscope';
+import { prisma } from '@/app/lib/db';
 
 export class DomainVerifier {
-  static generateVerificationToken(domain: string, userId?: string): string {
+  static async generateVerificationToken(domain: string, userId?: string): Promise<string> {
     const token = crypto.randomBytes(32).toString('hex');
     const normalizedDomain = this.normalizeDomain(domain);
     
-    verificationTokens.set(normalizedDomain, {
-      domain: normalizedDomain,
-      token,
-      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      userId
+    await prisma.verificationToken.deleteMany({
+      where: { domain: normalizedDomain }
+    });
+    
+    await prisma.verificationToken.create({
+      data: {
+        domain: normalizedDomain,
+        token,
+        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        userId
+      }
     });
     
     return token;
   }
-
 
   static async verifyDomain(url: string, userId?: string): Promise<DomainVerificationResult> {
     try {
@@ -27,19 +30,20 @@ export class DomainVerifier {
       
       const dnsResult = await this.verifyDNSTxtRecord(domain, userId);
       if (dnsResult.verified) {
-        this.markDomainAsVerified(domain, userId);
+        await this.markDomainAsVerified(domain, userId);
         return dnsResult;
       }
 
       const htmlResult = await this.verifyHTMLMetaTag(url, userId);
+      console.log(htmlResult);
       if (htmlResult.verified) {
-        this.markDomainAsVerified(domain, userId);
+        await this.markDomainAsVerified(domain, userId);
         return htmlResult;
       }
 
       const fileResult = await this.verifyFile(domain, userId);
       if (fileResult.verified) {
-        this.markDomainAsVerified(domain, userId);
+        await this.markDomainAsVerified(domain, userId);
         return fileResult;
       }
 
@@ -59,9 +63,15 @@ export class DomainVerifier {
   private static async verifyDNSTxtRecord(domain: string, userId?: string): Promise<DomainVerificationResult> {
     try {
       const dns = await import('dns').then(m => m.promises);
-      const expectedToken = verificationTokens.get(domain)?.token;
       
-      if (!expectedToken) {
+      const tokenRecord = await prisma.verificationToken.findFirst({
+        where: {
+          domain,
+          expiresAt: { gt: new Date() }
+        }
+      });
+      
+      if (!tokenRecord) {
         return { verified: false, error: 'No verification token found for this domain' };
       }
 
@@ -70,7 +80,7 @@ export class DomainVerifier {
       
       const verificationRecord = flatRecords.find(record => 
         record.startsWith('cyberscope-verification=') && 
-        record.includes(expectedToken)
+        record.includes(tokenRecord.token)
       );
 
       if (verificationRecord) {
@@ -86,9 +96,15 @@ export class DomainVerifier {
   private static async verifyHTMLMetaTag(url: string, userId?: string): Promise<DomainVerificationResult> {
     try {
       const domain = this.extractDomain(url);
-      const expectedToken = verificationTokens.get(domain)?.token;
       
-      if (!expectedToken) {
+      const tokenRecord = await prisma.verificationToken.findFirst({
+        where: {
+          domain,
+          expiresAt: { gt: new Date() }
+        }
+      });
+      
+      if (!tokenRecord) {
         return { verified: false, error: 'No verification token found for this domain' };
       }
 
@@ -105,7 +121,7 @@ export class DomainVerifier {
       }
 
       const html = await response.text();
-      const metaTagRegex = new RegExp(`<meta\\s+name=["']cyberscope-verification["']\\s+content=["']${expectedToken}["']`, 'i');
+      const metaTagRegex = new RegExp(`<meta\\s+name=["']cyberscope-verification["']\\s+content=["']${tokenRecord.token}["']`, 'i');
       
       if (metaTagRegex.test(html)) {
         return { verified: true, method: 'HTML Meta Tag' };
@@ -119,9 +135,14 @@ export class DomainVerifier {
 
   private static async verifyFile(domain: string, userId?: string): Promise<DomainVerificationResult> {
     try {
-      const expectedToken = verificationTokens.get(domain)?.token;
+      const tokenRecord = await prisma.verificationToken.findFirst({
+        where: {
+          domain,
+          expiresAt: { gt: new Date() }
+        }
+      });
       
-      if (!expectedToken) {
+      if (!tokenRecord) {
         return { verified: false, error: 'No verification token found for this domain' };
       }
 
@@ -141,7 +162,7 @@ export class DomainVerifier {
 
       const fileContent = await response.text();
       
-      if (fileContent.trim() === expectedToken) {
+      if (fileContent.trim() === tokenRecord.token) {
         return { verified: true, method: 'Verification File' };
       }
 
@@ -151,9 +172,12 @@ export class DomainVerifier {
     }
   }
 
-  static isDomainVerified(url: string, userId?: string): boolean {
+  static async isDomainVerified(url: string, userId?: string): Promise<boolean> {
     const domain = this.extractDomain(url);
-    const verification = verifiedDomains.get(domain);
+    
+    const verification = await prisma.verifiedDomain.findUnique({
+      where: { domain }
+    });
     
     if (!verification) return false;
     
@@ -181,27 +205,20 @@ export class DomainVerifier {
       'example.com',
       'httpbin.org',
       'jsonplaceholder.typicode.com',
-      'prepverse.xyz'
-      // Add domains that are okay to scan without verification
     ];
     
     return whitelistedDomains.includes(domain);
   }
 
-
   static isSuspiciousDomain(url: string): boolean {
     const domain = this.extractDomain(url);
     const suspiciousPatterns = [
-      // Government domains
       /\.gov$/,
       /\.mil$/,
-      // Banking domains
       /bank/i,
       /financial/i,
-      // Healthcare
       /hospital/i,
       /health/i,
-      // Internal/localhost
       /localhost/,
       /127\.0\.0\.1/,
       /192\.168\./,
@@ -214,7 +231,8 @@ export class DomainVerifier {
 
   static extractDomain(url: string): string {
     try {
-      return new URL(url).hostname.toLowerCase();
+      const hostname = new URL(url).hostname.toLowerCase();
+      return this.normalizeDomain(hostname);
     } catch {
       throw new Error('Invalid URL format');
     }
@@ -224,10 +242,17 @@ export class DomainVerifier {
     return domain.toLowerCase().replace(/^www\./, '');
   }
 
-  private static markDomainAsVerified(domain: string, userId?: string): void {
-    verifiedDomains.set(domain, {
-      userId,
-      verifiedAt: new Date()
+  private static async markDomainAsVerified(domain: string, userId?: string): Promise<void> {
+    await prisma.verifiedDomain.upsert({
+      where: { domain },
+      update: { 
+        verifiedAt: new Date(), 
+        userId 
+      },
+      create: { 
+        domain, 
+        userId 
+      }
     });
   }
 }

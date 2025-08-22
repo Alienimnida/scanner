@@ -1,4 +1,6 @@
+import { useUser } from '@clerk/nextjs';
 import { useState } from 'react';
+import { useUserContext } from './useUserContext';
 import type { ScanResult } from '../types/cyberscope';
 
 interface VerificationError {
@@ -19,7 +21,8 @@ interface UseCyberScanProps {
   userId?: string;
 }
 
-export const useCyberScan = ({ userId }: UseCyberScanProps = {}) => {
+export const useCyberScan = () => {
+  const { userId } = useUserContext();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanResult | null>(null);
