@@ -7,7 +7,7 @@ import { setupNetworkMonitoring, analyzeNetworkCalls } from '@/app/lib/scanner/n
 import { calculateSEOScore, generateSEORecommendations } from '@/app/lib/scanner/seo';
 import { SEORecommendation, ScanResult, ScannedScript } from '@/app/types/cyberscope';
 import { DomainVerifier } from '@/app/lib/verification/domain-verification';
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();

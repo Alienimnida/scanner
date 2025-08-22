@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from '@/generated/prisma/client'
+import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient();
 
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({
-      history: history.map((item) => ({
+      history: history.map((item: { timestamp: { toISOString: () => any; }; }) => ({
         ...item,
         timestamp: item.timestamp.toISOString()
       })),
