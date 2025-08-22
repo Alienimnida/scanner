@@ -24,6 +24,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
+    <html lang="en"
+    className='hydrated'>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
+    </html>
+=======
     <ClerkProvider>
       <html lang="en">
         <body
@@ -33,5 +42,6 @@ export default function RootLayout({
         </body>
       </html>
     </ClerkProvider>
+>>>>>>> 281c088079a59160abf8965b72a28a85ba58d331
   );
 }
