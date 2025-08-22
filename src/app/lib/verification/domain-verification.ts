@@ -205,6 +205,8 @@ export class DomainVerifier {
       'example.com',
       'httpbin.org',
       'jsonplaceholder.typicode.com',
+      'prepverse.xyz',
+      'orcaa.vercel.app'
     ];
     
     return whitelistedDomains.includes(domain);

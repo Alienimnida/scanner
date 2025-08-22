@@ -185,11 +185,19 @@ export const useCyberScan = () => {
     resetVerification();
   };
 
+  const loadPreviousScan = (scanResult: ScanResult) => {
+    setResult(scanResult);
+    setUrl(scanResult.url);
+    setError(null);
+    resetVerification();
+  };
+
   return {
     url,
     setUrl,
     loading,
     result,
+    setResult, // Expose setResult for direct updates
     error,
     handleScan,
     reset,
@@ -200,6 +208,7 @@ export const useCyberScan = () => {
     generateVerificationToken,
     checkVerification,
     resetVerification,
+    loadPreviousScan,
     userId
   };
-}
+};
