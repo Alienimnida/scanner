@@ -25,6 +25,7 @@ export interface ScannedScript {
 }
 
 export interface ScanResult {
+  id?: string;
   url: string;
   scripts: ScannedScript[];
   networkCalls: NetworkCall[];
@@ -39,6 +40,7 @@ export interface ScanResult {
     totalSize: number;
     domains: string[];
   };
+  seoAnalysis: SEOAnalysis; 
 }
 
 export interface SecurityScore {
@@ -48,7 +50,7 @@ export interface SecurityScore {
   icon: React.ReactNode;
 }
 
-export type TabType = 'scripts' | 'network';
+export type TabType = 'scripts' | 'network' | 'seo';
 
 export interface DomainVerificationResult {
   verified: boolean;
@@ -61,4 +63,87 @@ export interface VerificationToken {
   token: string;
   expiresAt: Date;
   userId?: string;
+}
+
+export interface SEOData {
+  title: string;
+  metaDescription: string;
+  metaKeywords: string;
+  canonical: string;
+  viewport: string;
+  charset: string;
+  openGraph: {
+    title: string;
+    description: string;
+    image: string;
+    type: string;
+  };
+  twitterCard: {
+    card: string;
+    title: string;
+    description: string;
+    image: string;
+  };
+  structuredData: any[];
+  headings: {
+    h1: string[];
+    h2: string[];
+    h3: string[];
+    h4: string[];
+    h5: string[];
+    h6: string[];
+  };
+  images: {
+    total: number;
+    withoutAlt: number;
+  };
+  links: {
+    internal: number;
+    external: number;
+  };
+  content: {
+    wordCount: number;
+    textLength: number;
+  };
+  performance: {
+    loadTime: number;
+  };
+  robotsTxt: string;
+  sitemapExists: boolean;
+  url: string;
+}
+
+export interface SEORecommendation {
+  category: string;
+  priority: 'high' | 'medium' | 'low';
+  issue: string;
+  recommendation: string;
+}
+
+export interface SEOAnalysis {
+  data: SEOData;
+  score: number;
+  recommendations: SEORecommendation[];
+}
+
+interface SEOAnalysisData {
+  data: SEOData;
+  score: number;
+  recommendations: SEORecommendation[];
+}
+
+interface SEOAnalysisProps {
+  seoAnalysis: SEOAnalysisData;
+}
+
+export interface ScanHistoryItem {
+  id: string;
+  url: string;
+  timestamp: string;
+  totalScripts: number;
+  totalCredentials: number;
+  seoScore: number;
+  userId?: string;
+  title?: string; // Page title from SEO data
+  status: 'completed' | 'failed' | 'in-progress';
 }

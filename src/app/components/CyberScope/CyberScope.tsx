@@ -9,18 +9,19 @@ import { StatsCards } from './StatsCards';
 import { CriticalAlerts } from './CriticalAlerts';
 import { ScriptAnalysis } from './ScriptAnalysis';
 import { NetworkAnalysis } from './NetworkAnalysis';
+import { SEOAnalysis } from './SEOAnalysis'; // Import the new SEO component
 import { TabNavigation } from '../ui/TabNavigation';
 import { ErrorAlert } from '../ui/ErrorAlert';
 import { DomainVerification } from './DomainVerification';
 import type { TabType } from '../../types/cyberscope';
 
 export default function CyberScope() {
-  const { 
-    url, 
-    setUrl, 
-    loading, 
-    result, 
-    error, 
+  const {
+    url,
+    setUrl,
+    loading,
+    result,
+    error,
     handleScan,
     verificationRequired,
     verificationInstructions,
@@ -30,7 +31,7 @@ export default function CyberScope() {
     checkVerification,
     resetVerification
   } = useCyberScan();
-  
+
   const [activeTab, setActiveTab] = useState<TabType>('scripts');
 
   const tabs = [
@@ -43,6 +44,11 @@ export default function CyberScope() {
       key: 'network' as TabType,
       label: `Network Calls (${result?.totalNetworkCalls || 0})`,
       icon: 'Server'
+    }] : []),
+    ...(result?.seoAnalysis ? [{
+      key: 'seo' as TabType,
+      label: `SEO Analysis (${result.seoAnalysis.score}/100)`,
+      icon: 'TrendingUp'
     }] : [])
   ];
 
@@ -51,7 +57,7 @@ export default function CyberScope() {
       <Header />
       
       <div className="container mx-auto p-6 max-w-7xl">
-        <ScanInput 
+        <ScanInput
           url={url}
           setUrl={setUrl}
           loading={loading}
@@ -78,7 +84,7 @@ export default function CyberScope() {
             <CriticalAlerts result={result} />
 
             <div className="bg-gray-800 rounded-lg shadow-xl border border-gray-700 overflow-hidden">
-              <TabNavigation 
+              <TabNavigation
                 tabs={tabs}
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
@@ -86,11 +92,16 @@ export default function CyberScope() {
               
               <div className="p-6">
                 {activeTab === 'scripts' && <ScriptAnalysis scripts={result.scripts} />}
+                
                 {activeTab === 'network' && result.networkCalls && result.networkSummary && (
-                  <NetworkAnalysis 
+                  <NetworkAnalysis
                     networkCalls={result.networkCalls}
                     networkSummary={result.networkSummary}
                   />
+                )}
+                
+                {activeTab === 'seo' && result.seoAnalysis && (
+                  <SEOAnalysis seoAnalysis={result.seoAnalysis} />
                 )}
               </div>
             </div>
