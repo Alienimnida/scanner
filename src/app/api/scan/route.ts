@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     browser = await getBrowserInstance();
     const page = await browser.newPage();
 
-    const networkCalls = await setupNetworkMonitoring(page);
+    const networkCalls = await setupNetworkMonitoring(page as any);
 
     await page.setUserAgent(
       'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
         script.credentials = detectCredentials(script.content, script.url);
         totalCredentials += script.credentials.length;
         
-        script.credentials.forEach(cred => {
+        script.credentials.forEach((cred: { type: string | number; }) => {
           credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
         });
       }
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
             script.credentials = detectCredentials(content, script.url);
             totalCredentials += script.credentials.length;
 
-            script.credentials.forEach(cred => {
+            script.credentials.forEach((cred: { type: string | number; }) => {
               credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
             });
           }

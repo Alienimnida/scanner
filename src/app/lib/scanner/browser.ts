@@ -2,30 +2,31 @@ import puppeteer from 'puppeteer-core';
 import chromium from '@sparticuz/chromium';
 
 if (process.env.NODE_ENV === 'production') {
-  chromium.setGraphicsMode=false;
+  chromium.setGraphicsMode = false;
 }
 
 export async function getBrowserInstance() {
   const isLocal = !process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME;
-  
+     
   if (isLocal) {
-    try {
-      const puppeteerRegular = await import('puppeteer');
-      return puppeteerRegular.default.launch({
-        headless: true,
-        ignoreHTTPSErrors: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-        ]
-      });
-    } catch (error) {
-      throw new Error('Please install puppeteer for local development: npm install puppeteer');
-    }
+    return puppeteer.launch({
+      headless: true,
+      executablePath: process.env.CHROME_EXECUTABLE_PATH || 
+        (process.platform === 'win32' 
+          ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+          : process.platform === 'darwin' 
+            ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+            : '/usr/bin/google-chrome-stable'
+        ),
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ]
+    });
   } else {
     const executablePath = await chromium.executablePath();
-    
+         
     return puppeteer.launch({
       args: [
         ...chromium.args,
@@ -38,10 +39,9 @@ export async function getBrowserInstance() {
         '--single-process',
         '--disable-gpu'
       ],
-      defaultViewport: chromium.defaultViewport,
+      defaultViewport: { width: 1280, height: 720 },
       executablePath,
       headless: true,
-      ignoreHTTPSErrors: true,
     });
   }
 }
