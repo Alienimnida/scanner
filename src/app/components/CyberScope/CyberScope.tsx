@@ -9,6 +9,7 @@ import { CriticalAlerts } from './CriticalAlerts';
 import { ScriptAnalysis } from './ScriptAnalysis';
 import { NetworkAnalysis } from './NetworkAnalysis';
 import { SEOAnalysis } from './SEOAnalysis';
+import { DatabaseAnalysis } from './DatabaseAnalysis';
 import { TabNavigation } from '../ui/TabNavigation';
 import { ErrorAlert } from '../ui/ErrorAlert';
 import { DomainVerification } from './DomainVerification';
@@ -45,6 +46,12 @@ export default function CyberScope() {
       label: `Script Analysis (${result?.totalScripts || 0})`,
       icon: 'FileText'
     },
+    ...(result?.databaseSecurity ? [{
+      key: 'database' as TabType,
+      label: `Database Security (${result.databaseSecurity.totalExposures || 0})`,
+      icon: 'Database'
+    }] : []),
+
     ...(result?.networkCalls && result.networkCalls.length > 0 ? [{
       key: 'network' as TabType,
       label: `Network Calls (${result?.totalNetworkCalls || 0})`,
@@ -57,7 +64,6 @@ export default function CyberScope() {
     }] : [])
   ];
 
-  // Effect to add successful scans to history
   useEffect(() => {
     if (result && result.id && !loading) {
       addToHistory(result);
@@ -65,7 +71,6 @@ export default function CyberScope() {
   }, [result, loading, addToHistory]);
 
   const handleLoadScan = (scanResult: ScanResult) => {
-    // Load the previous scan result into the current state
     if (loadPreviousScan) {
       loadPreviousScan(scanResult);
     } else {
@@ -117,6 +122,10 @@ export default function CyberScope() {
               
               <div className="p-6">
                 {activeTab === 'scripts' && <ScriptAnalysis scripts={result.scripts} />}
+                
+                {activeTab === 'database' && result.databaseSecurity && (
+                  <DatabaseAnalysis databaseSecurity={result.databaseSecurity} />
+                )}
                 
                 {activeTab === 'network' && result.networkCalls && result.networkSummary && (
                   <NetworkAnalysis

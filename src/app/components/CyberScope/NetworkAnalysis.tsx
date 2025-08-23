@@ -1,4 +1,4 @@
-import { Lock, Unlock, Database, Server, AlertTriangle } from 'lucide-react';
+import { Lock, Unlock, Database, Server, AlertTriangle, Link2Off } from 'lucide-react';
 import type { NetworkCall, ScanResult } from '../../types/cyberscope';
 import { formatBytes, getStatusColor, getMethodColor } from '../../utils/formatters';
 import { EmptyState } from './EmptyState';
@@ -91,6 +91,17 @@ export const NetworkAnalysis = ({ networkCalls, networkSummary }: NetworkAnalysi
                   <AlertTriangle className="w-4 h-4 text-red-400" />
                   <span className="text-red-200 text-sm font-medium">
                     Insecure connection detected - Data transmitted over HTTP
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {call.status === 404 && (
+              <div className="bg-orange-950/50 border border-orange-600 rounded-lg p-3 mt-3">
+                <div className="flex items-center gap-2">
+                  <Link2Off className="w-4 h-4 text-orange-400" />
+                  <span className="text-orange-200 text-sm font-medium">
+                    Broken link detected - Resource not found (404)
                   </span>
                 </div>
               </div>

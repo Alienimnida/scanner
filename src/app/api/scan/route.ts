@@ -5,6 +5,11 @@ import { shouldSkipScript } from '@/app/lib/scanner/filters';
 import { isValidUrl, getScriptSize } from '@/app/lib/scanner/utils';
 import { setupNetworkMonitoring, analyzeNetworkCalls } from '@/app/lib/scanner/network';
 import { calculateSEOScore, generateSEORecommendations } from '@/app/lib/scanner/seo';
+import { 
+  detectDatabaseExposures, 
+  scanDatabaseEndpoints, 
+  analyzeDatabaseSecurity 
+} from '@/app/lib/scanner/database-exposure';
 import { SEORecommendation, ScanResult, ScannedScript } from '@/app/types/cyberscope';
 import { DomainVerifier } from '@/app/lib/verification/domain-verification';
 import { PrismaClient } from '@prisma/client'
@@ -126,6 +131,7 @@ export async function POST(request: NextRequest) {
     const filteredScripts: ScannedScript[] = [];
     let totalCredentials = 0;
     const credentialsSummary: { [key: string]: number } = {};
+    let scriptDatabaseExposures: any[] = [];
     
     for (const script of scripts) {
       if (script.type === 'external' && shouldSkipScript(script.url)) {
@@ -148,6 +154,10 @@ export async function POST(request: NextRequest) {
         script.credentials.forEach((cred: { type: string | number; }) => {
           credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
         });
+
+        const dbExposures = detectDatabaseExposures(script.content, script.url);
+        scriptDatabaseExposures.push(...dbExposures);
+        script.databaseExposures = dbExposures;
       }
 
       if (script.type === 'external') {
@@ -171,15 +181,33 @@ export async function POST(request: NextRequest) {
             script.credentials.forEach((cred: { type: string | number; }) => {
               credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
             });
+
+            // Scan for database exposures in external scripts
+            const dbExposures = detectDatabaseExposures(content, script.url);
+            scriptDatabaseExposures.push(...dbExposures);
+            script.databaseExposures = dbExposures;
           }
         } catch (error) {
           console.log(`Failed to fetch external script: ${script.url}`);
           script.credentials = [];
+          script.databaseExposures = [];
         }
       }
 
       filteredScripts.push(script);
     }
+
+    console.log('Scanning for database endpoint exposures...');
+    
+    // Scan for database exposures at common endpoints
+    const endpointDatabaseExposures = await scanDatabaseEndpoints(page, url);
+    
+    console.log(`Found ${endpointDatabaseExposures.length} database endpoint exposures`);
+
+    // Extract page content for additional database exposure scanning
+    console.log('Scanning page content for database exposures...');
+    const pageContent = await page.content();
+    const pageDatabaseExposures = detectDatabaseExposures(pageContent, url);
 
     console.log('Returning to main page for SEO analysis...');
     await page.goto(url, { 
@@ -359,6 +387,19 @@ export async function POST(request: NextRequest) {
       }];
     }
 
+    // Analyze all database exposures
+    console.log('Analyzing database security...');
+    const allScriptExposures = [...scriptDatabaseExposures, ...pageDatabaseExposures];
+    const databaseScanResult = analyzeDatabaseSecurity(
+      allScriptExposures,
+      endpointDatabaseExposures,
+      networkCalls
+    );
+
+    console.log(`Database scan completed: ${databaseScanResult.totalExposures} exposures found`);
+    console.log(`- Critical: ${databaseScanResult.criticalExposures}`);
+    console.log(`- High: ${databaseScanResult.highExposures}`);
+
     const scanId = randomUUID();
 
     const result: ScanResult = {
@@ -372,6 +413,7 @@ export async function POST(request: NextRequest) {
       totalNetworkCalls: networkCalls.length,
       credentialsSummary,
       networkSummary,
+      databaseSecurity: databaseScanResult,
       seoAnalysis: {
         data: seoData,
         score: seoScore,
@@ -388,6 +430,7 @@ export async function POST(request: NextRequest) {
     console.log(`- Scripts: ${result.totalScripts}`);
     console.log(`- Credentials: ${totalCredentials}`);
     console.log(`- Network calls: ${networkCalls.length}`);
+    console.log(`- Database exposures: ${databaseScanResult.totalExposures}`);
     console.log(`- SEO score: ${seoScore}`);
     console.log(`- SEO recommendations: ${seoRecommendations.length}`);
 

@@ -49,7 +49,8 @@ export function isLikelyFalsePositive(value: string, type: string, content: stri
     'undefined',
     'null',
     'true',
-    'false'
+    'false',
+    '%filtered%'
   ];
   
   if (['Password', 'API Key'].includes(type) && value.length < 8) {

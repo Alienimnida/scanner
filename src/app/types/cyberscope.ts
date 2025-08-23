@@ -22,6 +22,7 @@ export interface ScannedScript {
   content?: string;
   size?: number;
   credentials?: CredentialMatch[];
+  databaseExposures?: DatabaseExposure[];
 }
 
 export interface ScanResult {
@@ -29,6 +30,7 @@ export interface ScanResult {
   url: string;
   scripts: ScannedScript[];
   networkCalls: NetworkCall[];
+  databaseSecurity: DatabaseScanResult;
   timestamp: string;
   totalScripts: number;
   totalCredentials: number;
@@ -51,7 +53,7 @@ export interface SecurityScore {
   icon: React.ReactNode;
 }
 
-export type TabType = 'scripts' | 'network' | 'seo';
+export type TabType = 'scripts'| 'database' | 'network' | 'seo';
 
 export interface DomainVerificationResult {
   verified: boolean;
@@ -145,6 +147,26 @@ export interface ScanHistoryItem {
   totalCredentials: number;
   seoScore: number;
   userId?: string;
-  title?: string; // Page title from SEO data
+  title?: string;
   status: 'completed' | 'failed' | 'in-progress';
+}
+
+export interface DatabaseExposure {
+  type: 'config_file' | 'connection_string' | 'sql_dump' | 'backup_file' | 'admin_interface' | 'error_message' | 'directory_listing';
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  source: string;
+  description: string;
+  evidence?: string;
+  recommendation: string;
+  url?: string;
+}
+
+export interface DatabaseScanResult {
+  totalExposures: number;
+  criticalExposures: number;
+  highExposures: number;
+  mediumExposures: number;
+  lowExposures: number;
+  exposures: DatabaseExposure[];
+  summary: { [key: string]: number };
 }

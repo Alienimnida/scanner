@@ -206,7 +206,8 @@ export class DomainVerifier {
       'httpbin.org',
       'jsonplaceholder.typicode.com',
       'prepverse.xyz',
-      'orcaa.vercel.app'
+      'orcaa.vercel.app',
+      'keyshade.xyz'
     ];
     
     return whitelistedDomains.includes(domain);

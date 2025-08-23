@@ -1,4 +1,4 @@
-import { FileText, Server } from 'lucide-react';
+import { FileText, Server,Database } from 'lucide-react';
 import type { TabType } from '../../types/cyberscope';
 
 interface Tab {
@@ -19,6 +19,8 @@ const getIcon = (iconName: string) => {
       return <FileText className="w-5 h-5" />;
     case 'Server':
       return <Server className="w-5 h-5" />;
+    case 'Database':
+      return <Database className="w-5 h-5" />;
     default:
       return <FileText className="w-5 h-5" />;
   }
