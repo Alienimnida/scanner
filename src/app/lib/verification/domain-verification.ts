@@ -210,8 +210,7 @@ export class DomainVerifier {
       'keyshade.xyz',
       'jisuniversity.ac.in',
       'scanner-nu-virid.vercel.app',
-      'dorkking.blindf.com',
-      'alienimnida.xyz'
+      'dorkking.blindf.com'
     ];
     
     return whitelistedDomains.includes(domain);

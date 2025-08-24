@@ -1,70 +1,158 @@
 "use client";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
+import Chart from "chart.js/auto";
 import type { ScanResult } from "../../types/cyberscope";
+import { useRef } from "react";
 
 interface ReportGenProps {
   result: ScanResult | null;
 }
 
 export function ReportGen({ result }: ReportGenProps) {
-  const generatePDF = (): void => {
+  const chartRef = useRef<HTMLCanvasElement>(null);
+
+  const generatePDF = async (): Promise<void> => {
     if (!result) return;
 
     const doc = new jsPDF();
 
-    console.log(result);
+    // ====== Title ======
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(33, 37, 41);
+    doc.text("Trinex Security Report", 105, 20, { align: "center" });
 
-    // Title
-    doc.setFontSize(20);
-    doc.text("Trinex Security Report", 20, 20);
-
-    doc.setFontSize(12);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(80);
     doc.text(`Scan ID: ${result.id || "N/A"}`, 20, 35);
-    doc.text(`Scanned URL: ${result.url || "N/A"}`, 20, 45);
-    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 55);
+    doc.text(`Scanned URL: ${result.url || "N/A"}`, 20, 43);
+    doc.text(`Date: ${new Date().toLocaleString()}`, 20, 51);
 
-    // Security Score
-    // doc.text(`Security Score: ${result.securityScore ?? "N/A"}`, 20, 70);
+    // Divider
+    doc.setDrawColor(180);
+    doc.line(20, 58, 190, 58);
 
-    // Scripts
-    doc.text(`Scripts Detected: ${result.totalScripts ?? 0}`, 20, 85);
+    // ====== Scorecards (Grid) ======
+    const drawScoreCard = (
+      x: number,
+      y: number,
+      title: string,
+      value: string,
+      color: [number, number, number]
+    ) => {
+      doc.setFillColor(...color);
+      doc.roundedRect(x, y, 80, 35, 3, 3, "F");
 
-    // Network
-    if (result.networkCalls) {
-      doc.text(`Network Calls: ${result.totalNetworkCalls ?? 0}`, 20, 100);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(255, 255, 255);
+      doc.text(title, x + 6, y + 12);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(18);
+      doc.text(value, x + 6, y + 26);
+    };
+
+    let startY = 70;
+
+    // drawScoreCard(20, startY, "Security Score", `${result.securityScore ?? "N/A"}`, [52, 152, 219]);
+    drawScoreCard(110, startY, "Scripts Detected", `${result.totalScripts ?? 0}`, [231, 76, 60]);
+
+    startY += 45;
+    drawScoreCard(20, startY, "Network Calls", `${result.totalNetworkCalls ?? 0}`, [46, 204, 113]);
+    drawScoreCard(110, startY, "SEO Score", `${result.seoAnalysis?.score ?? "N/A"}/100`, [155, 89, 182]);
+
+    // ====== Generate Chart ======
+    if (chartRef.current) {
+      const ctx = chartRef.current.getContext("2d");
+      if (ctx) {
+        // Destroy existing chart instance if re-rendered
+        if ((ctx as any).chart) {
+          (ctx as any).chart.destroy();
+        }
+
+        const chart = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["Security", "Scripts", "Network", "SEO"],
+            datasets: [
+              {
+                label: "Values",
+                data: [
+                //   result.securityScore ?? 0,
+                  result.totalScripts ?? 0,
+                  result.totalNetworkCalls ?? 0,
+                  result.seoAnalysis?.score ?? 0,
+                ],
+                backgroundColor: ["#3498db", "#e74c3c", "#2ecc71", "#9b59b6"],
+              },
+            ],
+          },
+          options: {
+            responsive: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+
+        // Give Chart.js time to render
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        const imgData = chartRef.current!.toDataURL("image/png", 1.0);
+        doc.setFontSize(14);
+        doc.setTextColor(33, 37, 41);
+        doc.text("Component Overview", 105, startY + 55, { align: "center" });
+        doc.addImage(imgData, "PNG", 35, startY + 60, 140, 80);
+
+        chart.destroy();
+      }
     }
 
-    // SEO
-    if (result.seoAnalysis) {
-      doc.text(
-        `SEO Score: ${result.seoAnalysis.score ?? "N/A"}/100`,
-        20,
-        115
-      );
-    }
+    let alertStart = startY + 150;
 
-    // Alerts
+    // ====== Critical Alerts ======
     if (Array.isArray(result.criticalAlerts) && result.criticalAlerts.length > 0) {
-      doc.text("Critical Alerts:", 20, 130);
-      result.criticalAlerts.slice(0, 5).forEach((alert: { message?: string; }, idx: number) => {
-        // Ensure `alert` has a message field
-        const message =
-          (alert as { message?: string }).message ?? "Alert detected";
-        doc.text(`- ${message}`, 25, 140 + idx * 10);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(200, 0, 0);
+      doc.text("Critical Alerts", 20, alertStart);
+
+      autoTable(doc, {
+        startY: alertStart + 5,
+        head: [["#", "Message"]],
+        body: result.criticalAlerts.slice(0, 5).map((alert, idx) => [
+          idx + 1,
+          alert.message ?? "Alert detected",
+        ]),
+        styles: { font: "helvetica", fontSize: 10, cellPadding: 3 },
+        headStyles: { fillColor: [200, 0, 0], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { left: 20, right: 20 },
       });
     }
 
-    // Save file
+    // ====== Footer ======
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "italic");
+    doc.setTextColor(130);
+    doc.text("Generated by Trinex CyberScope © 2025", 105, 290, { align: "center" });
+
+    // Save
     doc.save(`Trinex_Report_${result.url || "scan"}.pdf`);
   };
 
   return (
-    <button
-      onClick={generatePDF}
-      disabled={!result}
-      className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold shadow-lg disabled:opacity-50"
-    >
-      Generate Report
-    </button>
+    <>
+      <canvas ref={chartRef} width={400} height={200} style={{ display: "none" }} />
+      <button
+        onClick={generatePDF}
+        disabled={!result}
+        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-xl text-white font-semibold shadow-lg disabled:opacity-50"
+      >
+        Generate Report
+      </button>
+    </>
   );
 }
