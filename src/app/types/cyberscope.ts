@@ -28,6 +28,7 @@ export interface ScannedScript {
 export interface ScanResult {
   id?: string;
   url: string;
+  criticalAlerts: boolean;
   scripts: ScannedScript[];
   networkCalls: NetworkCall[];
   databaseSecurity: DatabaseScanResult;
@@ -44,6 +45,7 @@ export interface ScanResult {
   };
   seoAnalysis: SEOAnalysis; 
   userId?: string;
+  cliMode?: boolean;
 }
 
 export interface SecurityScore {

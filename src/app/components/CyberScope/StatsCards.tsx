@@ -8,7 +8,7 @@ interface StatsCardsProps {
 export const StatsCards = ({ result }: StatsCardsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 hover:border-blue-500 transition-colors">
+      <div className="bg-black p-6 rounded-lg shadow-lg border border-gray-700 hover:border-blue-500 transition-colors">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-blue-500/20 rounded-lg">
             <FileText className="w-6 h-6 text-blue-400" />
@@ -20,7 +20,7 @@ export const StatsCards = ({ result }: StatsCardsProps) => {
         </div>
       </div>
       
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 hover:border-red-500 transition-colors">
+      <div className="bg-black p-6 rounded-lg shadow-lg border border-gray-700 hover:border-red-500 transition-colors">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-red-500/20 rounded-lg">
             <AlertTriangle className="w-6 h-6 text-red-400" />
@@ -32,7 +32,7 @@ export const StatsCards = ({ result }: StatsCardsProps) => {
         </div>
       </div>
 
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 hover:border-purple-500 transition-colors">
+      <div className="bg-black p-6 rounded-lg shadow-lg border border-gray-700 hover:border-purple-500 transition-colors">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-purple-500/20 rounded-lg">
             <Wifi className="w-6 h-6 text-purple-400" />
@@ -44,7 +44,7 @@ export const StatsCards = ({ result }: StatsCardsProps) => {
         </div>
       </div>
 
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700 hover:border-green-500 transition-colors">
+      <div className="bg-black p-6 rounded-lg shadow-lg border border-gray-700 hover:border-green-500 transition-colors">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-green-500/20 rounded-lg">
             <Clock className="w-6 h-6 text-green-400" />

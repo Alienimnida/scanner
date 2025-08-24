@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { url, userId } = body;
+    const { url, userId, cliMode = false } = body;
 
     if (!url || typeof url !== 'string' || !isValidUrl(url)) {
       return NextResponse.json(
@@ -53,38 +53,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!DomainVerifier.checkRateLimit(request)) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { status: 429 }
-      );
+    // Skip domain verification and rate limiting for CLI mode
+    if (!cliMode) {
+      if (!DomainVerifier.checkRateLimit(request)) {
+        return NextResponse.json(
+          { error: 'Rate limit exceeded. Please try again later.' },
+          { status: 429 }
+        );
+      }
+
+      if (DomainVerifier.isSuspiciousDomain(url)) {
+        return NextResponse.json(
+          { 
+            error: 'This domain cannot be scanned for security reasons.',
+            requiresVerification: true 
+          },
+          { status: 403 }
+        );
+      }
+
+      const isVerified = await DomainVerifier.isDomainVerified(url, userId);
+      const isWhitelisted = await DomainVerifier.isWhitelistedDomain(url);
+
+      if (!isVerified && !isWhitelisted) {
+        return NextResponse.json(
+          { 
+            error: 'Domain verification required. Please verify domain ownership first.',
+            requiresVerification: true,
+            domain: DomainVerifier.extractDomain(url)
+          },
+          { status: 403 }
+        );
+      }
+
+      console.log(`Starting scan for: ${url} (verified: ${isVerified}, whitelisted: ${isWhitelisted})`);
+    } else {
+      console.log(`Starting CLI scan for: ${url} (CLI mode enabled - skipping domain verification)`);
     }
-
-    if (DomainVerifier.isSuspiciousDomain(url)) {
-      return NextResponse.json(
-        { 
-          error: 'This domain cannot be scanned for security reasons.',
-          requiresVerification: true 
-        },
-        { status: 403 }
-      );
-    }
-
-    const isVerified = await DomainVerifier.isDomainVerified(url, userId);
-    const isWhitelisted = await DomainVerifier.isWhitelistedDomain(url);
-
-    if (!isVerified && !isWhitelisted) {
-      return NextResponse.json(
-        { 
-          error: 'Domain verification required. Please verify domain ownership first.',
-          requiresVerification: true,
-          domain: DomainVerifier.extractDomain(url)
-        },
-        { status: 403 }
-      );
-    }
-
-    console.log(`Starting scan for: ${url} (verified: ${isVerified}, whitelisted: ${isWhitelisted})`);
 
     browser = await getBrowserInstance();
     const page = await browser.newPage();
@@ -408,6 +413,7 @@ export async function POST(request: NextRequest) {
       scripts: filteredScripts,
       networkCalls,
       timestamp: new Date().toISOString(),
+      criticalAlerts: databaseScanResult.criticalExposures > 0,
       totalScripts: filteredScripts.length,
       totalCredentials,
       totalNetworkCalls: networkCalls.length,
@@ -422,17 +428,34 @@ export async function POST(request: NextRequest) {
       userId
     };
 
-    // Save to history (don't await to avoid slowing down the response)
-    saveScanHistory(result, userId).catch(console.error);
+    if (!cliMode) {
+      saveScanHistory(result, userId).catch(console.error);
+    }
 
-    console.log(`Scan completed successfully!`);
-    console.log(`- Scan ID: ${scanId}`);
-    console.log(`- Scripts: ${result.totalScripts}`);
-    console.log(`- Credentials: ${totalCredentials}`);
-    console.log(`- Network calls: ${networkCalls.length}`);
-    console.log(`- Database exposures: ${databaseScanResult.totalExposures}`);
-    console.log(`- SEO score: ${seoScore}`);
-    console.log(`- SEO recommendations: ${seoRecommendations.length}`);
+    if (cliMode) {
+    const summary = {
+      scanId,
+      url,
+      totalScripts: result.totalScripts,
+      totalCredentials,
+      totalNetworkCalls: result.totalNetworkCalls,
+      databaseExposures: databaseScanResult.totalExposures,
+      criticalExposures: databaseScanResult.criticalExposures,
+      seoScore,
+    };
+
+    console.log("\n===== CyberScope CLI Scan Summary =====");
+    console.log(`Scan ID:          ${summary.scanId}`);
+    console.log(`URL:              ${summary.url}`);
+    console.log(`Scripts Found:    ${summary.totalScripts}`);
+    console.log(`Credentials:      ${summary.totalCredentials}`);
+    console.log(`Network Calls:    ${summary.totalNetworkCalls}`);
+    console.log(`DB Exposures:     ${summary.databaseExposures} (Critical: ${summary.criticalExposures})`);
+    console.log(`SEO Score:        ${summary.seoScore}/100`);
+    console.log("=======================================\n");
+
+  return NextResponse.json(summary);
+}
 
     return NextResponse.json(result);
 

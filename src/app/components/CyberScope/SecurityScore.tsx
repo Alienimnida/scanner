@@ -11,7 +11,7 @@ export const SecurityScore = ({ result }: SecurityScoreProps) => {
   const { label, color, icon } = getSecurityLabel(score);
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-xl border border-gray-700">
+    <div className="bg-black p-6 rounded-lg shadow-xl border border-gray-700">
       <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
         <Activity className="w-6 h-6 text-cyan-400" />
         Security Assessment
