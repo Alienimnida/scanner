@@ -207,7 +207,11 @@ export class DomainVerifier {
       'jsonplaceholder.typicode.com',
       'prepverse.xyz',
       'orcaa.vercel.app',
-      'keyshade.xyz'
+      'keyshade.xyz',
+      'jisuniversity.ac.in',
+      'scanner-nu-virid.vercel.app',
+      'dorkking.blindf.com',
+      'alienimnida.xyz'
     ];
     
     return whitelistedDomains.includes(domain);
