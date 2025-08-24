@@ -1,7 +1,7 @@
 "use client";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
-import Chart from "chart.js/auto";
+import { Chart } from "chart.js";
 import type { ScanResult } from "../../types/cyberscope";
 import { useRef } from "react";
 
@@ -73,7 +73,7 @@ export function ReportGen({ result }: ReportGenProps) {
           (ctx as any).chart.destroy();
         }
 
-        const chart = new Chart(ctx, {
+        const chartInstance = new Chart(ctx, {
           type: "bar",
           data: {
             labels: ["Security", "Scripts", "Network", "SEO"],
@@ -106,7 +106,7 @@ export function ReportGen({ result }: ReportGenProps) {
         doc.text("Component Overview", 105, startY + 55, { align: "center" });
         doc.addImage(imgData, "PNG", 35, startY + 60, 140, 80);
 
-        chart.destroy();
+        chartInstance.destroy();
       }
     }
 
