@@ -1,6 +1,6 @@
 import { Activity } from 'lucide-react';
 import { getSecurityScore, getSecurityLabel } from '@/app/utils/formatters';
-import type { ScanResult } from '../../types/cyberscope';
+import type { ScanResult } from '../../types/Trinex';
 
 interface SecurityScoreProps {
   result: ScanResult;

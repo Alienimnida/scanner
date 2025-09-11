@@ -42,7 +42,6 @@ export function SEOScore({ score }: { score: number }) {
         </div>
       </div>
       
-      {/* Progress bar */}
       <div className="mt-4">
         <div className="w-full bg-gray-700 rounded-full h-3">
           <div 

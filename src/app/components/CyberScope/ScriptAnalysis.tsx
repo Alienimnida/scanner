@@ -1,5 +1,5 @@
 import { ExternalLink, FileText, AlertTriangle, Eye } from 'lucide-react';
-import type { ScannedScript } from '../../types/cyberscope';
+import type { ScannedScript } from '../../types/Trinex';
 import { formatBytes, getCredentialIcon, getCredentialColor } from '../../utils/formatters';
 import { EmptyState } from  './EmptyState';
 

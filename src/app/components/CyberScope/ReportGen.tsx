@@ -2,7 +2,7 @@
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Chart } from "chart.js";
-import type { ScanResult } from "../../types/cyberscope";
+import type { ScanResult } from "../../types/Trinex";
 import { useRef } from "react";
 
 interface ReportGenProps {

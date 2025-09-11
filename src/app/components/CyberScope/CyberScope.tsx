@@ -15,7 +15,7 @@ import { DomainVerification } from "./DomainVerification";
 import { ScanHistorySidebar } from "./ScanHistorySidebar";
 import { useScanHistory } from "@/app/hooks/useScanHistory";
 import { ReportGen } from "./ReportGen";
-import type { TabType, ScanResult } from "../../types/cyberscope";
+import type { TabType, ScanResult } from "../../types/Trinex";
 
 export default function CyberScope() {
   const {

@@ -1,65 +1,9 @@
-// /app/lib/scanner/seo.ts
-
-export interface SEOData {
-  title: string;
-  metaDescription: string;
-  metaKeywords: string;
-  canonical: string;
-  viewport: string;
-  charset: string;
-  openGraph: {
-    title: string;
-    description: string;
-    image: string;
-    type: string;
-  };
-  twitterCard: {
-    card: string;
-    title: string;
-    description: string;
-    image: string;
-  };
-  structuredData: any[];
-  headings: {
-    h1: string[];
-    h2: string[];
-    h3: string[];
-    h4: string[];
-    h5: string[];
-    h6: string[];
-  };
-  images: {
-    total: number;
-    withoutAlt: number;
-  };
-  links: {
-    internal: number;
-    external: number;
-  };
-  content: {
-    wordCount: number;
-    textLength: number;
-  };
-  performance: {
-    loadTime: number;
-  };
-  robotsTxt: string;
-  sitemapExists: boolean;
-  url: string;
-}
-
-export interface SEORecommendation {
-  category: string;
-  priority: 'high' | 'medium' | 'low';
-  issue: string;
-  recommendation: string;
-}
+import { SEOData,SEORecommendation } from "@/app/types/Trinex";
 
 export function calculateSEOScore(seoData: SEOData): number {
   let score = 0;
   const maxScore = 100;
   
-  // Title (15 points)
   if (seoData.title) {
     if (seoData.title.length >= 30 && seoData.title.length <= 60) {
       score += 15;
@@ -68,7 +12,6 @@ export function calculateSEOScore(seoData: SEOData): number {
     }
   }
   
-  // Meta description (15 points)
   if (seoData.metaDescription) {
     if (seoData.metaDescription.length >= 120 && seoData.metaDescription.length <= 160) {
       score += 15;
@@ -77,32 +20,27 @@ export function calculateSEOScore(seoData: SEOData): number {
     }
   }
   
-  // H1 tags (10 points)
   if (seoData.headings.h1.length === 1) {
     score += 10;
   } else if (seoData.headings.h1.length > 0) {
     score += 5;
   }
   
-  // Image alt tags (10 points)
   if (seoData.images.total > 0) {
     const altRatio = (seoData.images.total - seoData.images.withoutAlt) / seoData.images.total;
     score += Math.floor(altRatio * 10);
   } else {
-    score += 5; // No images is better than images without alt
+    score += 5;
   }
   
-  // Viewport meta tag (5 points)
   if (seoData.viewport.includes('width=device-width')) {
     score += 5;
   }
   
-  // Canonical URL (5 points)
   if (seoData.canonical) {
     score += 5;
   }
   
-  // Open Graph tags (10 points)
   let ogScore = 0;
   if (seoData.openGraph.title) ogScore += 3;
   if (seoData.openGraph.description) ogScore += 3;
@@ -110,29 +48,24 @@ export function calculateSEOScore(seoData: SEOData): number {
   if (seoData.openGraph.type) ogScore += 2;
   score += ogScore;
   
-  // Content length (10 points)
   if (seoData.content.wordCount >= 300) {
     score += 10;
   } else if (seoData.content.wordCount >= 100) {
     score += 5;
   }
   
-  // Robots.txt (5 points)
   if (seoData.robotsTxt) {
     score += 5;
   }
   
-  // Sitemap (5 points)
   if (seoData.sitemapExists) {
     score += 5;
   }
   
-  // Structured data (10 points)
   if (seoData.structuredData.length > 0) {
     score += 10;
   }
   
-  // Performance (5 points)
   if (seoData.performance.loadTime < 3000) {
     score += 5;
   } else if (seoData.performance.loadTime < 5000) {
@@ -145,7 +78,6 @@ export function calculateSEOScore(seoData: SEOData): number {
 export function generateSEORecommendations(seoData: SEOData): SEORecommendation[] {
   const recommendations: SEORecommendation[] = [];
   
-  // Title issues
   if (!seoData.title) {
     recommendations.push({
       category: 'Title',
@@ -169,7 +101,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Meta description issues
   if (!seoData.metaDescription) {
     recommendations.push({
       category: 'Meta Description',
@@ -193,7 +124,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // H1 issues
   if (seoData.headings.h1.length === 0) {
     recommendations.push({
       category: 'Headings',
@@ -210,7 +140,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Heading hierarchy
   const totalHeadings = Object.values(seoData.headings).reduce((sum, headings) => sum + headings.length, 0);
   if (totalHeadings < 3 && seoData.content.wordCount > 500) {
     recommendations.push({
@@ -221,7 +150,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Image alt text issues
   if (seoData.images.withoutAlt > 0) {
     recommendations.push({
       category: 'Images',
@@ -231,7 +159,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Mobile optimization
   if (!seoData.viewport) {
     recommendations.push({
       category: 'Mobile',
@@ -248,7 +175,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Open Graph
   if (!seoData.openGraph.title && !seoData.openGraph.description) {
     recommendations.push({
       category: 'Social Media',
@@ -265,7 +191,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Twitter Card
   if (!seoData.twitterCard.card) {
     recommendations.push({
       category: 'Social Media',
@@ -275,7 +200,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Content length
   if (seoData.content.wordCount < 300) {
     recommendations.push({
       category: 'Content',
@@ -292,7 +216,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Technical SEO
   if (!seoData.robotsTxt) {
     recommendations.push({
       category: 'Technical SEO',
@@ -329,7 +252,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Structured data
   if (seoData.structuredData.length === 0) {
     recommendations.push({
       category: 'Structured Data',
@@ -339,7 +261,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
     });
   }
   
-  // Performance
   if (seoData.performance.loadTime > 5000) {
     recommendations.push({
       category: 'Performance',
@@ -355,8 +276,7 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
       recommendation: `Page loads in ${(seoData.performance.loadTime / 1000).toFixed(1)}s. Consider optimizing for faster loading (under 3s recommended).`
     });
   }
-  
-  // Link analysis
+
   if (seoData.links.internal === 0 && seoData.content.wordCount > 200) {
     recommendations.push({
       category: 'Internal Linking',
@@ -378,7 +298,6 @@ export function generateSEORecommendations(seoData: SEOData): SEORecommendation[
   return recommendations;
 }
 
-// Helper function to analyze SEO data (you can expand this)
 export function analyzeSEO(seoData: SEOData) {
   const score = calculateSEOScore(seoData);
   const recommendations = generateSEORecommendations(seoData);

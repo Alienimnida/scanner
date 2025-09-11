@@ -1,5 +1,5 @@
 import { Page } from 'puppeteer-core';
-import { NetworkCall } from '@/app/types/cyberscope';
+import { NetworkCall } from '@/app/types/Trinex';
 
 export async function setupNetworkMonitoring(page: Page): Promise<NetworkCall[]> {
   const networkCalls: NetworkCall[] = [];

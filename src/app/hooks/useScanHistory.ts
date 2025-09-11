@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ScanHistoryItem, ScanResult } from '@/app/types/cyberscope';
+import { ScanHistoryItem, ScanResult } from '@/app/types/Trinex';
 
 export function useScanHistory(userId?: string) {
   const [history, setHistory] = useState<ScanHistoryItem[]>([]);

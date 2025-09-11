@@ -2,7 +2,6 @@ import React, { useRef, useEffect } from 'react';
 import { User, LogOut, Settings, Mail, Calendar } from 'lucide-react';
 import { useClerk, useUser } from '@clerk/nextjs';
 
-// Use the return type from useUser hook
 type UserType = ReturnType<typeof useUser>['user'];
 
 interface UserProfileDropdownProps {
@@ -14,7 +13,6 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
   const { signOut } = useClerk();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -47,7 +45,6 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
       ref={dropdownRef}
       className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200"
     >
-      {/* User Info Section */}
       <div className="px-4 py-3 border-b border-gray-100">
         <div className="flex items-center gap-3 mb-3">
           {user.imageUrl ? (
@@ -71,7 +68,6 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
           </div>
         </div>
         
-        {/* User Stats */}
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div className="bg-gray-50 rounded-lg p-2">
             <div className="flex items-center gap-1.5 text-gray-600 mb-1">
@@ -98,11 +94,9 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
         </div>
       </div>
 
-      {/* Menu Items */}
       <div className="py-2">
         <button
           onClick={() => {
-            // Add your profile/settings navigation logic here
             console.log('Navigate to profile settings');
             onClose();
           }}
@@ -116,7 +110,6 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
         
         <button
           onClick={() => {
-            // Add your profile view logic here
             console.log('View profile');
             onClose();
           }}
@@ -129,10 +122,8 @@ export function UserProfileDropdown({ user, onClose }: UserProfileDropdownProps)
         </button>
       </div>
 
-      {/* Divider */}
       <div className="border-t border-gray-100 my-2" />
 
-      {/* Logout Button */}
       <div className="py-2">
         <button
           onClick={handleSignOut}

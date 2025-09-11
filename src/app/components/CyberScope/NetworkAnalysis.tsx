@@ -1,5 +1,5 @@
 import { Lock, Unlock, Database, Server, AlertTriangle, Link2Off } from 'lucide-react';
-import type { NetworkCall, ScanResult } from '../../types/cyberscope';
+import type { NetworkCall, ScanResult } from '../../types/Trinex';
 import { formatBytes, getStatusColor, getMethodColor } from '../../utils/formatters';
 import { EmptyState } from './EmptyState';
 

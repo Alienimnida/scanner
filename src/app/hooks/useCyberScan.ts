@@ -1,7 +1,7 @@
 import { useUser } from '@clerk/nextjs';
 import { useState } from 'react';
 import { useUserContext } from './useUserContext';
-import type { ScanResult } from '../types/cyberscope';
+import type { ScanResult } from '../types/Trinex';
 
 interface VerificationError {
   requiresVerification: boolean;

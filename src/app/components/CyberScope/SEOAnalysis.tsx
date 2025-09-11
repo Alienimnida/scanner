@@ -2,7 +2,7 @@ import { useState } from "react";
 import { SEODetails } from "./SEODetails";
 import { SEORecommendations } from "./SEORecommendations";
 import { SEOScore } from "./SEOScore";
-import type { SEOAnalysis } from "../../types/cyberscope";
+import type { SEOAnalysis } from "../../types/Trinex";
 
 export function SEOAnalysis({ seoAnalysis }: { seoAnalysis: SEOAnalysis }) {
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'recommendations' | 'details'>('overview');

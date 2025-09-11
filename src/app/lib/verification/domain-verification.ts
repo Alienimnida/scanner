@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
-import { DomainVerificationResult, VerificationToken } from '@/app/types/cyberscope';
+import { DomainVerificationResult, VerificationToken } from '@/app/types/Trinex';
 import { prisma } from '@/app/lib/db';
 
 export class DomainVerifier {
@@ -210,7 +210,8 @@ export class DomainVerifier {
       'keyshade.xyz',
       'jisuniversity.ac.in',
       'scanner-nu-virid.vercel.app',
-      'dorkking.blindf.com'
+      'dorkking.blindf.com',
+      'admin.prepverse.xyz',
     ];
     
     return whitelistedDomains.includes(domain);

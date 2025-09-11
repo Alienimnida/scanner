@@ -1,10 +1,7 @@
 import { Globe, Image, Link, FileText, Smartphone, BarChart3 } from 'lucide-react';
+import { SEOData } from '@/app/types/Trinex';
 
-interface SEODetailsProps {
-  seoData: any;
-}
-
-export function SEODetails({ seoData }: SEODetailsProps) {
+export function SEODetails({ seoData }: { seoData: SEOData }) {
   return (
     <div className="space-y-6">
       <h3 className="text-xl font-semibold text-gray-100 mb-4">SEO Details</h3>

@@ -1,5 +1,5 @@
 import { AlertOctagon, Key, Unlock } from 'lucide-react';
-import type { ScanResult } from '../../types/cyberscope';
+import type { ScanResult } from '../../types/Trinex';
 
 interface CriticalAlertsProps {
   result: ScanResult;

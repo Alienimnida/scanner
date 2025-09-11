@@ -1,5 +1,5 @@
 import React from 'react';
-import { DatabaseScanResult, DatabaseExposure } from '@/app/types/cyberscope';
+import { DatabaseScanResult, DatabaseExposure } from '@/app/types/Trinex';
 import { AlertTriangle, Database, FileText, Link, Server, AlertCircle, Eye, FolderOpen } from 'lucide-react';
 
 interface DatabaseAnalysisProps {

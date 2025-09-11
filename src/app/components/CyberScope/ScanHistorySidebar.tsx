@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { useScanHistory } from "@/app/hooks/useScanHistory";
-import { ScanHistoryItem, ScanResult } from "@/app/types/cyberscope";
+import { ScanHistoryItem, ScanResult } from "@/app/types/Trinex";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 
 interface ScanHistorySidebarProps {

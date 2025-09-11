@@ -5,17 +5,13 @@ import { shouldSkipScript } from '@/app/lib/scanner/filters';
 import { isValidUrl, getScriptSize } from '@/app/lib/scanner/utils';
 import { setupNetworkMonitoring, analyzeNetworkCalls } from '@/app/lib/scanner/network';
 import { calculateSEOScore, generateSEORecommendations } from '@/app/lib/scanner/seo';
-import { 
-  detectDatabaseExposures, 
-  scanDatabaseEndpoints, 
-  analyzeDatabaseSecurity 
-} from '@/app/lib/scanner/database-exposure';
-import { SEORecommendation, ScanResult, ScannedScript } from '@/app/types/cyberscope';
+import { SEORecommendation, ScanResult, ScannedScript, SEOData } from '@/app/types/Trinex';
 import { DomainVerifier } from '@/app/lib/verification/domain-verification';
 import { PrismaClient } from '@prisma/client'
 import { randomUUID } from 'crypto';
 
 const prisma = new PrismaClient();
+
 
 async function saveScanHistory(scanResult: ScanResult, userId?: string) {
   try {
@@ -53,7 +49,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Skip domain verification and rate limiting for CLI mode
     if (!cliMode) {
       if (!DomainVerifier.checkRateLimit(request)) {
         return NextResponse.json(
@@ -136,7 +131,6 @@ export async function POST(request: NextRequest) {
     const filteredScripts: ScannedScript[] = [];
     let totalCredentials = 0;
     const credentialsSummary: { [key: string]: number } = {};
-    let scriptDatabaseExposures: any[] = [];
     
     for (const script of scripts) {
       if (script.type === 'external' && shouldSkipScript(script.url)) {
@@ -159,10 +153,6 @@ export async function POST(request: NextRequest) {
         script.credentials.forEach((cred: { type: string | number; }) => {
           credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
         });
-
-        const dbExposures = detectDatabaseExposures(script.content, script.url);
-        scriptDatabaseExposures.push(...dbExposures);
-        script.databaseExposures = dbExposures;
       }
 
       if (script.type === 'external') {
@@ -186,33 +176,15 @@ export async function POST(request: NextRequest) {
             script.credentials.forEach((cred: { type: string | number; }) => {
               credentialsSummary[cred.type] = (credentialsSummary[cred.type] || 0) + 1;
             });
-
-            // Scan for database exposures in external scripts
-            const dbExposures = detectDatabaseExposures(content, script.url);
-            scriptDatabaseExposures.push(...dbExposures);
-            script.databaseExposures = dbExposures;
           }
         } catch (error) {
           console.log(`Failed to fetch external script: ${script.url}`);
           script.credentials = [];
-          script.databaseExposures = [];
         }
       }
 
       filteredScripts.push(script);
     }
-
-    console.log('Scanning for database endpoint exposures...');
-    
-    // Scan for database exposures at common endpoints
-    const endpointDatabaseExposures = await scanDatabaseEndpoints(page, url);
-    
-    console.log(`Found ${endpointDatabaseExposures.length} database endpoint exposures`);
-
-    // Extract page content for additional database exposure scanning
-    console.log('Scanning page content for database exposures...');
-    const pageContent = await page.content();
-    const pageDatabaseExposures = detectDatabaseExposures(pageContent, url);
 
     console.log('Returning to main page for SEO analysis...');
     await page.goto(url, { 
@@ -284,7 +256,7 @@ export async function POST(request: NextRequest) {
       
       const textContent = document.body.textContent || '';
       const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
-      
+
       let loadTime = 0;
       try {
         if (typeof performance !== 'undefined' && performance.timing) {
@@ -370,7 +342,7 @@ export async function POST(request: NextRequest) {
       robotsTxt,
       sitemapExists,
       url: url
-    };
+};
 
     console.log('Computing SEO score and recommendations...');
     
@@ -392,19 +364,6 @@ export async function POST(request: NextRequest) {
       }];
     }
 
-    // Analyze all database exposures
-    console.log('Analyzing database security...');
-    const allScriptExposures = [...scriptDatabaseExposures, ...pageDatabaseExposures];
-    const databaseScanResult = analyzeDatabaseSecurity(
-      allScriptExposures,
-      endpointDatabaseExposures,
-      networkCalls
-    );
-
-    console.log(`Database scan completed: ${databaseScanResult.totalExposures} exposures found`);
-    console.log(`- Critical: ${databaseScanResult.criticalExposures}`);
-    console.log(`- High: ${databaseScanResult.highExposures}`);
-
     const scanId = randomUUID();
 
     const result: ScanResult = {
@@ -413,13 +372,12 @@ export async function POST(request: NextRequest) {
       scripts: filteredScripts,
       networkCalls,
       timestamp: new Date().toISOString(),
-      criticalAlerts: databaseScanResult.criticalExposures > 0,
+      criticalAlerts: false,
       totalScripts: filteredScripts.length,
       totalCredentials,
       totalNetworkCalls: networkCalls.length,
       credentialsSummary,
       networkSummary,
-      databaseSecurity: databaseScanResult,
       seoAnalysis: {
         data: seoData,
         score: seoScore,
@@ -433,29 +391,26 @@ export async function POST(request: NextRequest) {
     }
 
     if (cliMode) {
-    const summary = {
-      scanId,
-      url,
-      totalScripts: result.totalScripts,
-      totalCredentials,
-      totalNetworkCalls: result.totalNetworkCalls,
-      databaseExposures: databaseScanResult.totalExposures,
-      criticalExposures: databaseScanResult.criticalExposures,
-      seoScore,
-    };
+      const summary = {
+        scanId,
+        url,
+        totalScripts: result.totalScripts,
+        totalCredentials,
+        totalNetworkCalls: result.totalNetworkCalls,
+        seoScore,
+      };
 
-    console.log("\n===== CyberScope CLI Scan Summary =====");
-    console.log(`Scan ID:          ${summary.scanId}`);
-    console.log(`URL:              ${summary.url}`);
-    console.log(`Scripts Found:    ${summary.totalScripts}`);
-    console.log(`Credentials:      ${summary.totalCredentials}`);
-    console.log(`Network Calls:    ${summary.totalNetworkCalls}`);
-    console.log(`DB Exposures:     ${summary.databaseExposures} (Critical: ${summary.criticalExposures})`);
-    console.log(`SEO Score:        ${summary.seoScore}/100`);
-    console.log("=======================================\n");
+      console.log("\n===== CyberScope CLI Scan Summary =====");
+      console.log(`Scan ID:          ${summary.scanId}`);
+      console.log(`URL:              ${summary.url}`);
+      console.log(`Scripts Found:    ${summary.totalScripts}`);
+      console.log(`Credentials:      ${summary.totalCredentials}`);
+      console.log(`Network Calls:    ${summary.totalNetworkCalls}`);
+      console.log(`SEO Score:        ${summary.seoScore}/100`);
+      console.log("=======================================\n");
 
-  return NextResponse.json(summary);
-}
+      return NextResponse.json(summary);
+    }
 
     return NextResponse.json(result);
 

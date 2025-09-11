@@ -1,17 +1,7 @@
 import { AlertTriangle, Info, CheckCircle2 } from 'lucide-react';
+import {SEORecommendation} from '@/app/types/Trinex';
 
-interface Recommendation {
-  category: string;
-  priority: 'high' | 'medium' | 'low';
-  issue: string;
-  recommendation: string;
-}
-
-interface SEORecommendationsProps {
-  recommendations: Recommendation[];
-}
-
-export function SEORecommendations({ recommendations }: SEORecommendationsProps) {
+export function SEORecommendations({ recommendations }: { recommendations: SEORecommendation[] }) {
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case 'high':
@@ -38,7 +28,7 @@ export function SEORecommendations({ recommendations }: SEORecommendationsProps)
     if (!acc[rec.priority]) acc[rec.priority] = [];
     acc[rec.priority].push(rec);
     return acc;
-  }, {} as Record<string, Recommendation[]>);
+  }, {} as Record<string, SEORecommendation[]>);
 
   return (
     <div className="space-y-6">

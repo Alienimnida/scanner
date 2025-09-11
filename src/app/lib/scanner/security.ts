@@ -1,4 +1,4 @@
-import { ScanResult, SecurityScore } from '@/app/types/cyberscope';
+import { ScanResult, SecurityScore } from '@/app/types/Trinex';
 
 export function calculateSecurityScore(scanResult: ScanResult): SecurityScore {
   let score = 100;

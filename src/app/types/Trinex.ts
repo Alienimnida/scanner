@@ -31,7 +31,7 @@ export interface ScanResult {
   criticalAlerts: boolean;
   scripts: ScannedScript[];
   networkCalls: NetworkCall[];
-  databaseSecurity: DatabaseScanResult;
+  databaseSecurity?: DatabaseScanResult;
   timestamp: string;
   totalScripts: number;
   totalCredentials: number;
